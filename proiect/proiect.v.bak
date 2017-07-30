@@ -1,0 +1,107 @@
+module proiect (
+input btn_l,btn_r,rst, //butoane si switch
+input clk,
+input scl,
+input sda,
+output h_sync,
+output v_sync,
+output reg [3:0] red,
+output reg [3:0] green,
+output reg [3:0] blue
+);
+wire [7:0]direction;				
+wire display_en;
+wire [10:0] x_pos, y_pos;
+wire update;
+vga_sync vga(.clk(clk),.h_sync(h_sync),.v_sync(v_sync),.display_en(display_en),.x_pos(x_pos),.y_pos(y_pos));
+//keyboard kb(.scl(scl),.sda(sda),.code(direction));		
+updateclk clock(.clk(clk),.update(update));
+reg border,paddle,ball;	
+reg [10:0] paddle_x;
+reg [10:0] ball_x,ball_y;
+wire left,right,reset;
+
+initial begin
+paddle_x=300;
+ball_x=390;
+ball_y=290;
+end
+//pentru tastatura
+//assign left=(direction==8'h1C)?1:0; //a
+//assign right=(direction==8'h23)?1:0; //d
+//assign reset=(direction==8'h29)?1:0; //space
+
+//pentru butoane active pe 0
+assign left=(~btn_l)?1:0; //buton 1 
+assign right=(~btn_r)?1:0; //buton 0
+assign reset=(~rst)?1:0; //switch 0
+
+always @(posedge clk) begin
+	border <= (((x_pos >= 0) && (x_pos <=21) || (x_pos >= 780) && (x_pos <= 799)) || 
+((y_pos >= 0) && (y_pos <= 21) || (y_pos >= 580) && (y_pos <= 599)));
+	paddle <=(x_pos > paddle_x && x_pos < (paddle_x+100)) && (y_pos > 500 && y_pos < 520);
+   ball <= (x_pos > ball_x && x_pos < (ball_x+20)) && (y_pos > ball_y && y_pos < (ball_y+20));
+end
+
+
+always @(posedge update) begin
+	if(reset)begin
+		paddle_x=300;
+		ball_x=390;
+		ball_y=290;
+	end
+	else begin
+		//test minge sus-jos
+		ball_y<=ball_y+20;
+		if(ball&&border)
+			ball_y<=ball_y-20;  
+		if(ball&&paddle)
+			ball_y<=ball_y+20;
+		
+		if (left)begin
+			paddle_x<=paddle_x-50;
+		end
+		else if (right)begin
+			paddle_x<=paddle_x+50;
+		end
+		else begin
+			paddle_x<=paddle_x;
+		end
+	end
+end
+
+assign paddle_c = (paddle);
+assign border_c = (border);
+always@(posedge clk) begin
+
+		if(display_en) begin
+			if(paddle||border) begin
+				if(paddle)begin
+					red=4'b0000;
+					green=4'b0000;
+					blue=4'b1111;
+				end
+				if(border)begin
+					red=4'b0000;
+					green=4'b0000;
+					blue=4'b0000;
+				end
+			
+			end
+			else begin
+					red=4'b1111;
+					green=4'b1111;
+					blue=4'b1111;
+			end
+		end
+		else begin
+			red=4'b0000;
+			green=4'b0000;
+			blue=4'b0000;
+		end
+end
+endmodule
+
+
+		
+
