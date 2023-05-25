@@ -8,7 +8,7 @@ module top(
 				output [6:0] trans_2
 		);
 		wire [7:0] data_out;
-		
+
 			ps2new keyboard(.ck(FPGA_clock),
 							.reset(rst),
 							.scl(PS2_sclk),
